@@ -3,6 +3,7 @@ library(rvest)
 library(data.table)
 library(readxl)
 
+
 ################################
 ### Lendo arquivos txt ou csv ###
 ################################
