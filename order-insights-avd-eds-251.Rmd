@@ -39,10 +39,11 @@ library(readxl)
 library(knitr)
 
 ### import dataset
-customer <- read.csv("C:/Users/fernanda.lasmar_ifoo/Desktop/pessoal/MBA_ds/EDS/avd eds 25.1/customer-insights/customer-insights-eds.csv", header = TRUE)
+orders <- read.csv("C:/Users/fernanda.lasmar_ifoo/Desktop/pessoal/MBA_ds/EDS/avd-251/orders_shop.csv", header = TRUE)
 
 ### validacao import dataset
-kable(head(customer))
+kable(head(orders))
 
 ### validacao dados dataset
-summarytools::descr(customer)
+summarytools::descr(orders)
+
