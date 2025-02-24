@@ -1,0 +1,48 @@
+---
+title: "estudo de impacto no cancelamento de pedidos por ruptura"
+author: "Fernanda Lasmar"
+date: "2025-02-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## avd  estatística pra data science 25.1
+
+## instalação RStudio
+![programa instalado na máquina](C:/Users/fernanda.lasmar_ifoo/Pictures/Screenshots/Captura de tela 2025-02-23 201609.png)
+
+![input do dataset no ambiente do RStudio](C:/Users/fernanda.lasmar_ifoo/Pictures/Screenshots/Captura de tela 2025-02-23 201609.png)
+
+## contexto do estudo
+#### base de dados: dados de histórico de pedidos entregues e cancelados com variáveis operacionais relacionadas a jornada de compra e entrega.
+
+#### objetivo: identificar variáveis que inteferem direta ou indiretamente no cancelamento e no cancelamento por ruptura para direcionais de forma mais eficiente as iniciativas dos stakeholders operacionais de iFood Shop.
+
+
+## estudo dos dados
+### import packages
+install.packages('tidyverse')
+install.packages('dlookr')
+install.packages("summarytools")
+install.packages("ggplot")
+install.packages("readxl")
+install.packages('knitr')
+
+library(tidyverse)
+library(dlookr)
+library(summarytools)
+library(ggplot)
+library(readxl)
+library(knitr)
+
+### import dataset
+customer <- read.csv("C:/Users/fernanda.lasmar_ifoo/Desktop/pessoal/MBA_ds/EDS/avd eds 25.1/customer-insights/customer-insights-eds.csv", header = TRUE)
+
+### validacao import dataset
+kable(head(customer))
+
+### validacao dados dataset
+summarytools::descr(customer)
