@@ -1,5 +1,5 @@
 ---
-title: "Estudo de Impacto no Cancelamento de Pedidos por Ruptura"
+title: "Estudo de comportamento de pedidos por delta criação x janela de entrega"
 author: "Fernanda Lasmar"
 date: "2025-02-23"
 output: html_document
@@ -146,8 +146,18 @@ table(orders$diff_horas_bins)
 ### Histograma de Variável `diff_horas_criacao_inicio_janela`
 ```{r}
 ggplot(orders, aes(x = diff_horas_criacao_inicio_janela)) +
-  geom_histogram(breaks = c(seq(0, 72, by = 4), seq(96, max(orders$diff_horas_criacao_inicio_janela, na.rm = TRUE) + 24, by = 24)), fill = "red", color = "black") +
-  labs(title = "Pedidos x Delta Criação e Janela de Entrega", x = "Delta horas", y = "Pedidos")
+  geom_histogram(
+    breaks = c(seq(0, 72, by = 4), seq(96, max(orders$diff_horas_criacao_inicio_janela, na.rm = TRUE) + 24, by = 24)), 
+    fill = "red", color = "black"
+  ) +
+  stat_bin(
+    breaks = c(seq(0, 72, by = 4), seq(96, max(orders$diff_horas_criacao_inicio_janela, na.rm = TRUE) + 24, by = 24)), 
+    geom = "text", 
+    aes(label = after_stat(count)), 
+    vjust = -0.5, color = "black", size = 4
+  ) +
+  labs(title = "Pedidos x Delta Criacao e Janela de Entrega", x = "Delta horas", y = "Pedidos") +
+  theme_minimal()
 ```
 
 ### Correlação entre as Variáveis
