@@ -1,5 +1,5 @@
 ---
-title: "estudo de impacto no cancelamento de pedidos por ruptura"
+title: "Estudo de Impacto no Cancelamento de Pedidos por Ruptura"
 author: "Fernanda Lasmar"
 date: "2025-02-23"
 output: html_document
@@ -9,41 +9,168 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## avd  estatística pra data science 25.1
+## AVD Estatística para Data Science 25.1
 
-## instalação RStudio
-![programa instalado na máquina](C:/Users/fernanda.lasmar_ifoo/Pictures/Screenshots/Captura de tela 2025-02-23 201609.png)
+## Instalação RStudio
 
-![input do dataset no ambiente do RStudio](C:/Users/fernanda.lasmar_ifoo/Pictures/Screenshots/Captura de tela 2025-02-23 201609.png)
-
-## contexto do estudo
-#### base de dados: dados de histórico de pedidos entregues e cancelados com variáveis operacionais relacionadas a jornada de compra e entrega.
-
-#### objetivo: identificar variáveis que inteferem direta ou indiretamente no cancelamento e no cancelamento por ruptura para direcionais de forma mais eficiente as iniciativas dos stakeholders operacionais de iFood Shop.
+![Programa instalado na máquina](C:/Users/fernanda.lasmar_ifoo/Desktop/pessoal/MBA_ds/EDS/avd-251/avd_rstudio.png)
 
 
-## estudo dos dados
-### import packages
-install.packages('tidyverse')
-install.packages('dlookr')
-install.packages("summarytools")
-install.packages("ggplot")
-install.packages("readxl")
-install.packages('knitr')
+![Input do dataset no ambiente do RStudio](C:/Users/fernanda.lasmar_ifoo/Desktop/pessoal/MBA_ds/EDS/avd-251/avd_enviroment.png)
+
+
+## Contexto do Estudo
+
+### Base de Dados
+Dados históricos de pedidos entregues e cancelados, incluindo variáveis operacionais relacionadas à jornada de compra e entrega.
+
+### Objetivo
+Identificar variáveis que interferem direta ou indiretamente no cancelamento de pedidos, especialmente por ruptura, para direcionar de forma mais eficiente as iniciativas dos stakeholders operacionais do iFood Shop.
+
+## Estudo dos Dados
+
+### Importação de Pacotes
+```{r}
+options(repos = c(CRAN = "https://cran.rstudio.com/"))
+
+install.packages(c('tidyverse', 'dlookr', 'summarytools', 'ggplot2', 'readxl', 'knitr'))
 
 library(tidyverse)
 library(dlookr)
 library(summarytools)
-library(ggplot)
+library(ggplot2)
 library(readxl)
 library(knitr)
+```
 
-### import dataset
+### Importação do Dataset
+```{r}
 orders <- read.csv("C:/Users/fernanda.lasmar_ifoo/Desktop/pessoal/MBA_ds/EDS/avd-251/orders_shop.csv", header = TRUE)
+```
 
-### validacao import dataset
+### Validação da Importação
+```{r}
 kable(head(orders))
+```
 
-### validacao dados dataset
-summarytools::descr(orders)
+### Diagnóstico dos Dados
+```{r}
+orders %>% dlookr::diagnose()
+```
+
+```{r}
+orders$diff_horas_criacao_inicio_janela <- as.numeric(orders$diff_horas_criacao_inicio_janela)
+```
+## Análise Estatística
+
+### Distribuição da Variável `diff_horas_criacao_inicio_janela`
+```{r}
+freq_raw <- summarytools::freq(orders$diff_horas_criacao_inicio_janela, style='rmarkdown', order='freq')
+freq_df <- as.data.frame(freq_raw)
+print(freq_df)
+```
+
+### Medidas Estatísticas
+```{r}
+media <- mean(orders$diff_horas_criacao_inicio_janela, na.rm = TRUE)
+desvio_padrao <- sd(orders$diff_horas_criacao_inicio_janela, na.rm = TRUE)
+quantil_25 <- as.numeric(quantile(orders$diff_horas_criacao_inicio_janela, probs = 0.25, na.rm = TRUE))
+quantil_75 <- as.numeric(quantile(orders$diff_horas_criacao_inicio_janela, probs = 0.75, na.rm = TRUE))
+
+print(media)
+print(desvio_padrao)
+print(quantil_25)
+print(quantil_75)
+```
+
+### Resumo Estatístico da Variável `diff_horas_criacao_inicio_janela`
+```{r}
+summarytools::descr(orders$diff_horas_criacao_inicio_janela)
+```
+
+### Teste de normalidade das variáveis
+
+```{r}
+numeric_vars <- orders %>% select_if(is.numeric)
+
+numeric_vars %>%
+  pivot_longer(everything(), names_to = "variavel", values_to = "valor") %>%
+  drop_na() %>%  # Remove valores NA
+  ggplot(aes(x = valor)) +
+  geom_histogram(aes(y = after_stat(density)), fill = "grey", color = "black", bins = 30) +
+  geom_density(color = "red", linewidth = 1) +
+  facet_wrap(~variavel, scales = "free") +
+  labs(title = "Distribuicao das Variaveis Numericas", x = "Valor", y = "Densidade")
+
+```
+
+
+Nenhuma variável segue uma distribuição normal. O que faz sentido considerando que é uma amostra de uma série temporal.
+
+
+### Definição de Bins para o Histograma
+Considerando que a coluna se trata do delta de horas entre a criação do pedido e o início da janela de entrega, faz sentido acompanhar por janela de 24h. No entanto, há algumas premissas do negócio a serem consideradas:
+1. Durante a maior parte do dia de funcionamento da loja, os pedidos são criados para entrega no dia seguinte.
+2. Somente é disponibilizada a compra para entrega com prazo maior que 2 dias em períodos específicos do ano, como feriados e eventos especiais.
+
+```{r}
+orders$diff_horas_bins <- cut(
+  orders$diff_horas_criacao_inicio_janela, 
+  breaks = seq(0, max(orders$diff_horas_criacao_inicio_janela, na.rm = TRUE) + 24, by = 24), 
+  include.lowest = TRUE
+)
+
+table(orders$diff_horas_bins)
+```
+
+```{r}
+percent_3dias <- (16181 + 12078 + 4563) / 35999
+percent_2dias <- (16181 + 12078) / 35999
+
+print(percent_3dias)
+print(percent_2dias)
+```
+
+Como observado, **91% dos pedidos** foram criados para entrega em até **3 dias**, sendo **78% deles para até 2 dias**. Dado esse contexto, faz mais sentido segregar os bins de forma mais granular até 3 dias (72h) e, a partir daí, utilizar janelas de 24h.
+
+```{r}
+orders$diff_horas_bins <- cut(
+  orders$diff_horas_criacao_inicio_janela, 
+  breaks = c(seq(0, 72, by = 4), seq(96, max(orders$diff_horas_criacao_inicio_janela, na.rm = TRUE) + 24, by = 24)), 
+  include.lowest = TRUE
+)
+
+table(orders$diff_horas_bins)
+```
+
+### Histograma de Variável `diff_horas_criacao_inicio_janela`
+```{r}
+ggplot(orders, aes(x = diff_horas_criacao_inicio_janela)) +
+  geom_histogram(breaks = c(seq(0, 72, by = 4), seq(96, max(orders$diff_horas_criacao_inicio_janela, na.rm = TRUE) + 24, by = 24)), fill = "red", color = "black") +
+  labs(title = "Pedidos x Delta Criação e Janela de Entrega", x = "Delta horas", y = "Pedidos")
+```
+
+### Correlação entre as Variáveis
+```{r}
+correl <- cor(orders %>% select_if(is.numeric), use = "complete.obs")
+print(correl)
+```
+
+## ScatterPlots
+```{r}
+ggplot(orders, aes(x = diff_horas_criacao_inicio_janela, y = num_skus_solicitados)) +
+  geom_point(alpha = 0.5, color = "red") +
+  labs(title = "Relação entre delta horas e num skus", x = "delta horas", y = "skus solicitados")
+```
+
+É possível observar que, apesar de maiores, os grandes pedidos não sofrem impacto na janela de entrega, sendo bem representantes em até 50h. 
+
+```{r}
+ggplot(orders, aes(x = diff_horas_criacao_inicio_janela, y = peso)) +
+  geom_point(alpha = 0.5, color = "red") +
+  labs(title = "Relação entre delta horas e peso do pedido", x = "delta horas", y = "peso pedido")
+```
+
+O mesmo é visivel para pedidos pesados, apesar de serem pouco presentes como um todo.
+Nenhuma variável apresenta comportamento linear. Como próximos passos, pode ser interessante testar cenários de personalização da janela de entrega de acordo com variações de peso e tamanho do pedido
 
